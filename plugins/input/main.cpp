@@ -1,4 +1,5 @@
-#include "input.hpp"
+#include "input/input.hpp"
+#include "config/config_handler.hpp"
 #include <arpa/inet.h>
 #include <iostream>
 #include <string>
@@ -12,19 +13,17 @@ int main() {
     return -1; // Failed creating socket
   }
 
+  auto C = ConfigHandler("/tmp/nonexistts.json");
+
   const std::string file_path = "/var/log/syslog";
   std::string address = "/tmp/input.sock";
-  int port = 8080;
 
   struct sockaddr_un addr;
   addr.sun_family = AF_UNIX;
-  int ret = 0;
-  ret = inet_pton(AF_UNIX, file_path.c_str(), &(addr.sun_path));
+  strncpy(addr.sun_path, address.c_str(), sizeof(addr.sun_path) - 1);
 
-  if (ret < 0)
-    return ret;
+  int ret = connect(sock_fd, (struct sockaddr *)&addr, sizeof(addr));
 
-  ret = connect(sock_fd, (struct sockaddr *)&addr, sizeof(addr));
   if (ret < 0)
     return ret;
 
@@ -32,9 +31,9 @@ int main() {
   bool finished = false;
   syslog.stream_from_source(finished);
 
-  if (finished){
-    std::cout<<"Done!";
-  }else{
-    std::cout<<"Why not done";
+  if (finished) {
+    std::cout << "Done!";
+  } else {
+    std::cout << "Why not done";
   }
 }

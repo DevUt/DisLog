@@ -35,12 +35,13 @@ int Input::stream_from_source(bool &finished, int start_offset) {
 }
 
 int Input::stream(int b_read) {
-  size_t sent = 0;
-  while (sent < b_read) {
-    ssize_t sent = send(socket_fd, buf.data() + sent, b_read - sent, 0);
+  size_t tot_sent = 0;
+  while (tot_sent < b_read) {
+    ssize_t sent = send(socket_fd, buf.data() + tot_sent, b_read - tot_sent, 0);
 
     if (sent < 0)
       return sent;
+    tot_sent += sent;
   }
   return 0;
 }
