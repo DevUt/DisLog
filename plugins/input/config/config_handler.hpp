@@ -26,8 +26,8 @@ public:
    * @brief What type of socket has been given in configuration file
    * @note It assumes that `typeof(AF_*)` is int
    *
-   * @return Type of socket which can be directly plugged in `socket()` on success
-   *          else -1
+   * @return Type of socket which can be directly plugged in `socket()` on
+   * success else -1
    */
   int getSocketType();
 

@@ -1,0 +1,20 @@
+{
+  "input" : [
+    {
+      "tag" : "SYSLOG",
+      "comm_type" : "UNIX_SOCK",
+      "UNIX_SOCK" : {
+        "sock_file_path" : "/tmp/input.sock"
+      }
+    },
+    {
+      "tag" : "SYSLOG",
+      "comm_type" : "IPv4",
+      "IPv4" : {
+        "uri" : "localhost",
+        "port" : 8080
+      }
+    }
+  ],
+  "tag" : "Core_1"
+}
