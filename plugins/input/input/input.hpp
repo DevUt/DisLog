@@ -15,7 +15,7 @@ public:
    * @param[in] start_offset From where in file should we stream
    * @return 0 on sucess and non zero on failure
    */
-  int stream_from_source(bool &finished, int start_offset = 0);
+  int stream_from_source(int start_offset = 0);
 
   /**
    * @brief Construct Input Class

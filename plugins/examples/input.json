@@ -1,0 +1,10 @@
+{
+  "comm_type" : "UNIX_SOCK",
+  "UNIX_SOCK" : {
+    "sock_file_path" : "/tmp/input.sock"
+  },
+  "IPv4" : {
+    "uri" : "localhost",
+    "port" : 8080
+  }
+}

@@ -14,14 +14,7 @@ void handle_conn(int connfd) {
 
   while ((bytes_read = read(connfd, buf, sizeof(buf) - 1)) > 0) {
     buf[bytes_read] = '\0';
-    std::cout << "Received: " << buf << '\n';
-
-    // Echo back to client
-    ssize_t bytes_written = write(connfd, buf, bytes_read);
-    if (bytes_written != bytes_read) {
-      std::cerr << "Failed to echo data: " << std::strerror(errno) << '\n';
-      break;
-    }
+    std::cout << buf;
   }
 
   if (bytes_read == 0) {
@@ -49,8 +42,7 @@ int main() {
   strncpy(serv_addr.sun_path, socket_path.c_str(),
           sizeof(serv_addr.sun_path) - 1);
 
-  if (bind(sockfd, (struct sockaddr *)(&serv_addr),
-           sizeof(serv_addr)) < 0) {
+  if (bind(sockfd, (struct sockaddr *)(&serv_addr), sizeof(serv_addr)) < 0) {
     std::cerr << "Failed to bind: " << std::strerror(errno) << '\n';
     close(sockfd);
     return 1;

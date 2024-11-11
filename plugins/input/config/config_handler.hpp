@@ -17,15 +17,23 @@ public:
    *            Support for Ipv6 is underway
    *
    * @param[out] socket_out This storage will be populated
-   * 
+   *
    * @returns 0 if error else size of socket created.
    */
-  socklen_t getForwardedSocket(struct sockaddr_storage *socket_out);
+  socklen_t getForwardedSocketStore(struct sockaddr_storage *socket_out);
+
+  /**
+   * @brief What type of socket has been given in configuration file
+   * @note It assumes that `typeof(AF_*)` is int
+   *
+   * @return Type of socket which can be directly plugged in `socket()` on success
+   *          else -1
+   */
+  int getSocketType();
 
 private:
   using json = nlohmann::json;
   json configData;
-
 
   /**
    * @brief Construct a Unix Socket according to the configuration file

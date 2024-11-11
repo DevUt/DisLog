@@ -9,7 +9,7 @@
 
 /// This reads from the source file
 /// Currently this version doesn't provide much version checking
-int Input::stream_from_source(bool &finished, int start_offset) {
+int Input::stream_from_source(int start_offset) {
   int fd = open(file_path.c_str(), O_RDONLY);
   if (fd < 0)
     return fd; // Return the error back to the caller.
@@ -19,13 +19,10 @@ int Input::stream_from_source(bool &finished, int start_offset) {
   lseek(fd, start_offset, SEEK_SET);
 
   int ret = 0;
-  while (size_t b_read = read(fd, buf.data(), BUF_SIZE)) {
+  while (true) {
+    size_t b_read = read(fd, buf.data(), BUF_SIZE);
     if (b_read == -1)
       return -1;       // We failed again
-    if (b_read == 0) { // We have finished reading.
-      finished = 1;
-      break;
-    }
 
     ret = stream(b_read);
     if (ret < 0)
@@ -34,6 +31,7 @@ int Input::stream_from_source(bool &finished, int start_offset) {
   return 0; // We are sucessful
 }
 
+/// Attempt to send all the data that has been read
 int Input::stream(int b_read) {
   size_t tot_sent = 0;
   while (tot_sent < b_read) {
