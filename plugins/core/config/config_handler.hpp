@@ -23,5 +23,11 @@ public:
    * @brief Return `Source` objects for valid sources
    *
    */
-  std::vector<Source> getSourceFromInputs();
+  std::vector<Source* > getSourceFromInputs();
+
+  /**
+   * @brief Return `Source` objects for valid output
+   *
+   */
+  std::vector<Source* > getSourceForOutputs();
 };

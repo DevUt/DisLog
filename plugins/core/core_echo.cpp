@@ -1,6 +1,8 @@
+#include <arpa/inet.h>
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <netinet/in.h>
 #include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -25,22 +27,27 @@ void handle_conn(int connfd) {
 }
 
 int main() {
-  const std::string socket_path = "/tmp/input.sock";
+  // const std::string socket_path = "/tmp/input.sock";
 
+  const std::string socket_path = "localhost";
   // Remove existing socket file if it exists
   // Else it goes crazy
-  std::filesystem::remove(socket_path);
+  // std::filesystem::remove(socket_path);
 
-  int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
     std::cerr << "Failed to create socket: " << std::strerror(errno) << '\n';
     return 1;
   }
 
-  struct sockaddr_un serv_addr{};
-  serv_addr.sun_family = AF_UNIX;
-  strncpy(serv_addr.sun_path, socket_path.c_str(),
-          sizeof(serv_addr.sun_path) - 1);
+  // struct sockaddr_un serv_addr{};
+  // serv_addr.sun_family = AF_UNIX;
+  struct sockaddr_in serv_addr{};
+  // strncpy(serv_addr.sun_path, socket_path.c_str(),
+  //         sizeof(serv_addr.sun_path) - 1);
+
+  inet_pton(AF_INET, socket_path.c_str(), &serv_addr.sin_addr);
+  serv_addr.sin_port = htons(7000);
 
   if (bind(sockfd, (struct sockaddr *)(&serv_addr), sizeof(serv_addr)) < 0) {
     std::cerr << "Failed to bind: " << std::strerror(errno) << '\n';

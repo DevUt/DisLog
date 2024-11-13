@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <format>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string>
@@ -8,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <vector>
 
 /**
  * @brief Base Class for different type of sources
@@ -24,12 +26,18 @@ public:
   std::string tag;
 
   /**
+   * @output Contains the tags of outputs
+   * @detail Only valid for when `isInput()` is true
+   */
+  std::vector<std::string> output;
+
+  /**
    * @brief It constructs a socket address and returns
    *
    * @param[out] out `sockaddr_storage` setup with the socket
    * @return 0 on error else sizeof socket
    */
-  virtual socklen_t constructSock(struct sockaddr_storage *out){
+  virtual socklen_t constructSock(struct sockaddr_storage *out) const {
     return 0;
   };
 
@@ -38,9 +46,39 @@ public:
    *
    * @return return the domain. or -1 if Invalid instantiation
    */
-  virtual int getTypeOfSocket(){
-    return -1;
-  };
+  virtual int getTypeOfSocket() const { return -1; };
+
+  /**
+   * @brief Gets you information on where the socket is running
+   *
+   * @return string containing information on the socket
+   */
+  virtual std::string getLocation() const { return "Invalid ACCESS HOW??"; }
+
+  /**
+   * @brief If this source requires any cleanup this does it
+   *
+   */
+  virtual void cleanUp() const {}
+
+  /**
+   * @brief Create a clone
+   *
+   * @return [TODO:description]
+   */
+  virtual Source *clone() { return new Source; }
+
+  /**
+   * @isInput Is the source block a input source
+   *
+   */
+  bool isInput = false;
+
+  /**
+   * @isOutput Is the source block an output source
+   *
+   */
+  bool isOutput = false;
 };
 
 /**
@@ -63,6 +101,8 @@ public:
     if (!sourceBlock["tag"].is_string()) {
       throw std::runtime_error("Tag type is not string");
     }
+
+    tag = sourceBlock["tag"].get<std::string>();
 
     if (!sourceBlock.contains(COMM_TYPE)) {
       throw std::runtime_error(
@@ -90,7 +130,7 @@ public:
       throw std::runtime_error("Socket filepath is not a string!");
     }
 
-    socket_file_path = unix_detail_j.get<std::string>();
+    socket_file_path = unix_detail_j[UNIX_FILEPATH].get<std::string>();
   }
 
   /**
@@ -100,7 +140,7 @@ public:
    * @return sizeof the socket:w
    *
    */
-  socklen_t constructSock(struct sockaddr_storage *out) override {
+  socklen_t constructSock(struct sockaddr_storage *out) const override {
     struct sockaddr_un *unix_addr = (struct sockaddr_un *)(out);
     unix_addr->sun_family = AF_UNIX;
     std::strncpy(unix_addr->sun_path, socket_file_path.c_str(), 100);
@@ -112,9 +152,27 @@ public:
    *
    * @return `AF_UNIX`
    */
-  int getTypeOfSocket() override { return AF_UNIX; }
+  int getTypeOfSocket() const override { return AF_UNIX; }
+
+  /**
+   * @brief Gets you the socket file path
+   *
+   * @return The socket file path
+   */
+  std::string getLocation() const override { return socket_file_path; }
+
+  /**
+   * @brief Remove the socket file
+   *
+   */
+  void cleanUp() const override { std::filesystem::remove(socket_file_path); }
+
+  Source *clone() override { return new UnixSource(*this); }
 };
 
+/**
+ * @brief Class for modelling an IPv4 Source
+ */
 class IPv4Source : public Source {
 private:
   using json = nlohmann::json;
@@ -135,6 +193,7 @@ public:
       throw std::runtime_error("Tag type is not string");
     }
 
+    tag = sourceBlock["tag"].get<std::string>();
     if (!sourceBlock.contains(COMM_TYPE)) {
       throw std::runtime_error(
           "How did we end up here? communication type is not defined!");
@@ -179,7 +238,7 @@ public:
    * @param[out] out The constructed socket
    * @return size of the socket
    */
-  socklen_t constructSock(struct sockaddr_storage *out) override {
+  socklen_t constructSock(struct sockaddr_storage *out) const override {
     struct sockaddr_in *ipv4_addr = (struct sockaddr_in *)(out);
     memset(ipv4_addr, 0, sizeof(*ipv4_addr));
     ipv4_addr->sin_family = AF_INET;
@@ -196,7 +255,20 @@ public:
    *
    * @return `AF_INET`
    */
-  int getTypeOfSocket() override { return AF_INET; }
+  int getTypeOfSocket() const override { return AF_INET; }
+
+  /**
+   * @brief Gets uri and port number
+   *
+   * @return A string having {uri} : {port}
+   */
+  std::string getLocation() const override {
+    return std::format("{} : {}", uri, port);
+  }
+
+  Source * clone() override {
+    return  new IPv4Source(*this);
+  }
 };
 
 /**
@@ -211,8 +283,7 @@ public:
    *
    * @return -1
    */
-  int getTypeOfSocket() override { return -1; }
-
+  int getTypeOfSocket() const override { return -1; }
 
   /**
    * @brief Return 0 to indicate invalid source
@@ -220,7 +291,13 @@ public:
    * @param[out] out Won't be modified
    * @return 0
    */
-  socklen_t constructSock(struct sockaddr_storage *out) override {
+  socklen_t constructSock(struct sockaddr_storage *out) const override {
     return 0;
   }
+
+  /**
+   * @brief Indicates its an invalid source it should never reach this stage
+   * @return String saying its invalid
+   */
+  std::string getLocation() const override { return "Invalid source"; }
 };
