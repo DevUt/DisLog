@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <iostream>
@@ -26,8 +27,13 @@ void handle_conn(int connfd) {
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   // const std::string socket_path = "/tmp/input.sock";
+  //
+  if (argc != 2) {
+    std::cout << "Unexpected number of args\n";
+    exit(EXIT_FAILURE);
+  }
 
   const std::string socket_path = "localhost";
   // Remove existing socket file if it exists
@@ -47,7 +53,8 @@ int main() {
   //         sizeof(serv_addr.sun_path) - 1);
 
   inet_pton(AF_INET, socket_path.c_str(), &serv_addr.sin_addr);
-  serv_addr.sin_port = htons(7000);
+  int port = atoi(argv[1]);
+  serv_addr.sin_port = htons(port);
 
   if (bind(sockfd, (struct sockaddr *)(&serv_addr), sizeof(serv_addr)) < 0) {
     std::cerr << "Failed to bind: " << std::strerror(errno) << '\n';
@@ -61,7 +68,7 @@ int main() {
     return 1;
   }
 
-  std::cout << "Server started on " << socket_path << '\n';
+  std::cout << "Server started on " << socket_path << " : "  << port<<'\n';
 
   int epollfd = epoll_create1(0);
   if (epollfd < 0) {
