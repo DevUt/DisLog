@@ -21,15 +21,11 @@ public:
   constexpr static std::string_view UNIX_STRING = "UNIX_SOCK";
   constexpr static std::string_view COMM_TYPE = "comm_type";
   constexpr static std::string_view IPV4_STRING = "IPv4";
+  constexpr static std::string_view CMD_SERVER = "cmd_server";
+  constexpr static std::string_view CONN_SERVER = "conn_server";
 
   /// Tag for the source
   std::string tag;
-
-  /**
-   * @output Contains the tags of outputs
-   * @detail Only valid for when `isInput()` is true
-   */
-  std::vector<std::string> output;
 
   /**
    * @brief It constructs a socket address and returns

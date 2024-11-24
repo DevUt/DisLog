@@ -15,3 +15,4 @@ execute_process(
 
 add_subdirectory(plugins/input)
 add_subdirectory(plugins/core)
+add_subdirectory(plugins/receiver)

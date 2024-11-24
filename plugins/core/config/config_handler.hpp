@@ -11,6 +11,12 @@ private:
   using json = nlohmann::json;
   json configData;
 
+  /**
+   * @brief Return `Source` objects from a particular array
+   *
+   */
+  std::vector<Source *> getSourceFromTag(std::string_view TAG);
+
 public:
   /**
    * @brief Construct ConfigHandler
@@ -25,9 +31,19 @@ public:
    */
   std::vector<Source* > getSourceFromInputs();
 
+  // std::vector<Source* > getSourceForOutputs();
+
+
   /**
-   * @brief Return `Source` objects for valid output
+   * @brief Get information about command server
    *
    */
-  std::vector<Source* > getSourceForOutputs();
+  Source * getCommandServer();
+
+
+  /**
+   * @brief Get information about where to listen
+   *
+   */
+  Source * getListenServer();
 };

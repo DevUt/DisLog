@@ -5,41 +5,28 @@
       "comm_type": "UNIX_SOCK",
       "UNIX_SOCK": {
         "sock_file_path": "/tmp/input.sock"
-      },
-      "output_to": [
-        "salsa",
-        "dio"
-      ]
-    },
-    {
-      "tag": "Ipv4Log",
-      "comm_type": "IPv4",
-      "IPv4": {
-        "uri": "0.0.0.0",
-        "port": 8080
-      },
-      "output_to" : [
-        "salsa"
-      ]
-    }
-  ],
-  "output": [
-    {
-      "tag": "salsa",
-      "comm_type": "IPv4",
-      "IPv4": {
-        "uri" : "localhost",
-        "port" : 6000
-      }
-    },
-    {
-      "tag": "dio",
-      "comm_type": "IPv4",
-      "IPv4": {
-        "uri" : "localhost",
-        "port" : 7000
       }
     }
   ],
-  "tag": "Core_1"
+  "tag": "Core_1",
+  "cmd_server": [
+    {
+      "tag": "CMD_SERV_IPV4",
+      "comm_type": "IPv4",
+      "IPv4": {
+        "uri": "localhost",
+        "port": 3000
+      }
+    }
+  ],
+  "conn_server": [
+    {
+      "tag": "CONN_SERV_IPV4",
+      "comm_type": "IPv4",
+      "IPv4": {
+        "uri": "localhost",
+        "port": 3001
+      }
+    }
+  ]
 }
