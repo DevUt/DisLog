@@ -116,10 +116,10 @@
  * @param[in] buf The data we need to write
  * @param[in] bytes_to_write How many bytes to write
  */
-void ServiceClient::write_to_conn(int write_fd, char *buf,
-                                  size_t bytes_to_write) {
+int ServiceClient::write_to_conn(int write_fd, char *buf,
+                                 size_t bytes_to_write) {
   if (bytes_to_write <= 0)
-    return;
+    return 0;
 
   // Non-blocking write
   size_t bytes_written = 0;
@@ -130,15 +130,14 @@ void ServiceClient::write_to_conn(int write_fd, char *buf,
     if (result < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         // TODO: Make a queue out of this data
-        return;
+        return 0;
       }
       std::cerr << "Write error: \n" << std::strerror(errno) << '\n';
-      std::terminate();
-      return;
+      return -1;
     }
     bytes_written += result;
   }
-  return;
+  return 0;
 }
 
 /**
@@ -149,13 +148,13 @@ void ServiceClient::write_to_conn(int write_fd, char *buf,
  */
 
 void ServiceClient::handle_conn() {
-  char buf[1024];
-  ssize_t bytes_read;
 
   while (!haveInput)
     ;
 
   while (true) {
+    char buf[1024];
+    ssize_t bytes_read;
     bytes_read = read(inputfd, buf, sizeof(buf) - 1);
 
     if (bytes_read < 0) {
@@ -167,15 +166,17 @@ void ServiceClient::handle_conn() {
       std::cerr << "Read error: " << std::strerror(errno) << '\n';
       return;
     } else if (bytes_read == 0) {
-      // Connection closed
-      std::cout << clientfd << "closed the connection" << "\n";
-      return;
+      continue;
     }
 
-    write_to_conn(clientfd, buf, bytes_read);
+    int ret = write_to_conn(clientfd, buf, bytes_read);
+    if (ret < 0) {
+      std::cerr << "Dying for client " << clientfd << '\n';
+      return;
+    }
   }
 }
 
-void ServiceClient::run(){
+void ServiceClient::run() {
   std::thread(&ServiceClient::handle_conn, this).detach();
 }

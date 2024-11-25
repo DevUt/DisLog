@@ -1,6 +1,7 @@
 #include "../common.hpp"
 #include "config/config_handler.hpp"
 #include "service/service.hpp"
+#include <cerrno>
 #include <cstdlib>
 #include <fcntl.h>
 #include <iostream>
@@ -21,6 +22,7 @@ std::unordered_map<int, std::string> client_buffers;
 std::unordered_map<int, ServiceClient *> client_services;
 std::vector<Source *> inputs;
 std::unordered_map<std::string, int> input_tag_fd_map;
+std::unordered_map<std::string, std::string> input_tag_file_map;
 
 void set_nonblocking(int sockfd) {
   int flags = fcntl(sockfd, F_GETFL, 0);
@@ -56,8 +58,15 @@ void handle_json_message(int epoll_fd, int client_fd, const json &j) {
       if (j.contains(Common::selectedInput) &&
           j[Common::selectedInput].is_string()) {
         if (input_tag_fd_map.contains(j[Common::selectedInput])) {
-          client_services[client_fd]->inputfd =
-              input_tag_fd_map[j[Common::selectedInput].get<std::string>()];
+          std::string oldfile =
+              input_tag_file_map[j[Common::selectedInput].get<std::string>()];
+          int new_op_fd = open(oldfile.data(), O_RDONLY);
+          lseek(new_op_fd, 0, SEEK_SET);
+          if (new_op_fd < 0) {
+            std::cerr << "Failure switching fd for" << client_fd << '\n';
+            return;
+          }
+          client_services[client_fd]->inputfd = new_op_fd;
           client_services[client_fd]->haveInput = true;
           std::cout << "Success in changing fd for " << client_fd << "\n";
         }
@@ -123,6 +132,7 @@ void handle_new_connection(int epoll_fd, int server_fd) {
 
   std::cout << "New client connected: " << client_fd << std::endl;
 }
+
 void run_server(Source *client) {
   struct sockaddr_storage server_addr;
   int socklen = client->constructSock(&server_addr);
@@ -176,9 +186,37 @@ void run_server(Source *client) {
 
 void accept_input(int sockfd, Source *inp) {
   int connfd = accept(sockfd, NULL, NULL);
-  std::cout << "Input on board at " << connfd << '\n';
-  input_tag_fd_map[inp->tag] = connfd;
+  if (connfd > 0) {
+    std::cout << "Input on board at " << connfd << '\n';
+    std::string tmp_f = std::format("/tmp/{}", inp->tag);
+    int openfd =
+        open(tmp_f.data(), O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0600);
+    if (openfd < 0) {
+      std::cerr << "Failure to create tmps\n";
+      return;
+    }
+    input_tag_fd_map[inp->tag] = openfd;
+    input_tag_file_map[inp->tag] = tmp_f;
+    while (true) {
+      char buf[1024];
+      int bytes_read = read(connfd, buf, 1023);
+      if (bytes_read < 0) {
+        std::cerr << "Stopping for input " << inp->tag << "\n";
+        return;
+      }
+
+      buf[bytes_read] = '\0';
+      write(openfd, buf, bytes_read + 1);
+      memset(buf, 0, 1024);
+    }
+  } else {
+    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+      std::cerr << "Failure to accept input\n";
+      return;
+    }
+  }
 }
+
 
 int main(int argc, char **argv) {
   if (argc != 2) {

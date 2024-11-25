@@ -15,7 +15,7 @@ private:
    */
   int clientfd;
 
-  void write_to_conn(int write_fd, char *buf, size_t bytes_to_write);
+  int write_to_conn(int write_fd, char *buf, size_t bytes_to_write);
 
   int set_nonblocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
